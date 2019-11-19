@@ -1,11 +1,12 @@
 package socket4;
 
-//this code comes from https://github.com/MattToegel/IT114/blob/master/Examples/SocketsPart4/src/ServerThread.java
+//a majority of this code comes from https://github.com/MattToegel/IT114/blob/master/Examples/SocketsPart4/src/ServerThread.java
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.Random;
 
 
 //Class to hold client connection and prevent it from blocking the main thread of the server
@@ -50,7 +51,7 @@ public class ServerThread extends Thread{
 	public String getClientName() {
 		return this.clientName;
 	}
-	void processPayload(Payload payload) {
+	void processPayload(Payload payload) throws IOException {
 		System.out.println("Received: " + payload);
 		switch(payload.payloadType) {
 			case MESSAGE:
@@ -62,7 +63,14 @@ public class ServerThread extends Thread{
 				System.out.println("Removing client " + clientName);
 				server.removeClient(this);
 				stopThread();
-				break;
+			break;
+			case ROLL_IT:
+				Random random = new Random();
+				int roll = random.nextInt(7);
+				System.out.println("You rolled: " + roll);
+				send(new Payload(PayloadType.ROLL_IT, "You rolled " + roll));
+				server.broadcast(new Payload(PayloadType.ROLL_IT, "Client " + clientName + "rolled " + roll));
+			break;
 			default:
 				break;
 		}
