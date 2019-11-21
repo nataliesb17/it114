@@ -5,12 +5,15 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.Scanner;
 
 
 public class socketClient {
 	Socket server;
-	
+	static ObjectOutputStream out;
+	public Queue<String> messages = new LinkedList<String>();
 	public void connect(String address, int port) {
 		try {
 			server = new Socket(address, port);
@@ -21,6 +24,15 @@ public class socketClient {
 			e.printStackTrace();
 		}
 	}
+	
+	public void sendRoll() {
+		try {
+			out.writeObject(new Payload(PayloadType.ROLL_IT, null));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
 	public void start() throws IOException {
 		if(server == null) {
 			return;
@@ -104,12 +116,15 @@ public class socketClient {
 		switch(p.payloadType) {
 		case CONNECT:
 			System.out.println("A client connected");
+			messages.add("A client connected");
 			break;
 		case DISCONNECT:
 			System.out.println("A client disconnected");
+			messages.add("A client disconnected");
 			break;
 		case MESSAGE:
 			System.out.println("From Server: " + p.message);
+			messages.add(p.message);
 			break;
 		default:
 			System.out.println("We do not handle payloadType " + p.payloadType.toString());
