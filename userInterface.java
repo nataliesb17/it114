@@ -5,12 +5,16 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.IOException;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
 
 public class userInterface {
 	public static boolean running = true;
@@ -36,7 +40,7 @@ public class userInterface {
 		Thread clientMessageReader = new Thread() {
 			@Override
 			public void run() {
-				while(running) {
+				while(running && interaction.isClientConnected()) {
 					String mes = interaction.getMessage();
 					if(mes != null) {
 						System.out.println("Got message " + mes);
@@ -61,6 +65,44 @@ public class userInterface {
 			
 		};
 		
+		JPanel connectionPanel = new JPanel();
+		JTextField hostTextField = new JTextField();
+		hostTextField.setText("127.0.0.1");
+		JTextField portTextField = new JTextField();
+		portTextField.setText("3000");
+		JTextField errorTextField = new JTextField();
+		errorTextField.setText("");
+		JButton connect = new JButton();
+		connect.setText("Connect");
+		connect.addActionListener(new ActionListener() {
+		    @Override
+		    public void actionPerformed(ActionEvent e) {
+		        String hostStr = hostTextField.getText();
+		        String portString = portTextField.getText();
+		        try {
+		        	int port = Integer.parseInt(portString.trim());
+		        	interaction.connect(hostStr, port, errorTextField);
+		        	errorTextField.setText("Success!");
+		        	connectionPanel.setVisible(false);
+		        	clientMessageReader.start();
+		        	System.out.println("Connected");
+		        }
+		        catch(Exception ex) {
+		        	ex.printStackTrace();
+		        	errorTextField.setText(ex.getMessage());
+		        }
+		    }
+		});
+		connectionPanel.add(hostTextField);
+		connectionPanel.add(portTextField);
+		connectionPanel.add(connect);
+		connectionPanel.add(errorTextField);
+		frame.addWindowListener(new WindowAdapter() {
+			  public void windowClosing(WindowEvent we) {
+				  	interaction.client.disconnect();
+				    System.exit(0);
+				  }
+		});
 		//creating the roll dice button
 		JButton rollDice = new JButton();
 		rollDice.setPreferredSize(new Dimension(200,40));
@@ -85,6 +127,27 @@ class Interaction {
 	public Interaction() {
 		
 	}
+	public void connect(String host, int port, JTextField errorField) throws IOException{
+		//thread just so we don't lock up main UI
+		Thread connectionThread = new Thread() {
+			@Override
+			public void run() {
+				client = new socketClient();
+				try {
+					client.connect(host, port);
+					client.start();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					errorField.setText(e.getMessage());
+					errorField.getParent().setVisible(true);
+				}//this terminates when client is closed
+				
+				System.out.println("Connection thread finished");
+			}
+		};
+		connectionThread.start();
+	}
 	public void sendRoll() {
 		client.sendRoll();
 	}
@@ -93,5 +156,11 @@ class Interaction {
 			return null;
 		}
 		return client.messages.poll();
+	}
+	public boolean isClientConnected() {
+		if(client == null) {
+			return true;//just so loop doesn't die early
+		}
+		return client.isStillConnected();
 	}
 }

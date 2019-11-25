@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Scanner;
@@ -14,14 +13,13 @@ public class socketClient {
 	Socket server;
 	static ObjectOutputStream out;
 	public Queue<String> messages = new LinkedList<String>();
-	public void connect(String address, int port) {
+	public void connect(String address, int port) throws IOException {
 		try {
 			server = new Socket(address, port);
 			System.out.println("Client has connected");
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
+			throw e;
 		}
 	}
 	
@@ -46,28 +44,28 @@ public class socketClient {
 				@Override
 				public void run() {
 					try {
-						while(!server.isClosed()) {
-							System.out.println("Waiting for input");
-							String line = si.nextLine();
-							if(!"quit".equalsIgnoreCase(line) && line != null) {
-								out.writeObject(new Payload(PayloadType.MESSAGE, line));
-							}
-							else {
-								System.out.println("Stopping input thread");
-								out.writeObject(new Payload(PayloadType.DISCONNECT, null));
-								break;
-							}
+						Payload fromServer;
+						//while we're connected, listen for payloads from server
+						while(!server.isClosed() && (fromServer = (Payload)in.readObject()) != null) {
+							processPayload(fromServer);
 						}
+						System.out.println("Stopping server listen thread");
 					}
-					catch(Exception e) {
-						System.out.println("Client shutdown");
+					catch (Exception e) {
+						if(!server.isClosed()) {
+							e.printStackTrace();
+							System.out.println("Server closed connection");
+						}
+						else {
+							System.out.println("Connection closed");
+						}
 					}
 					finally {
 						close();
 					}
 				}
 			};
-			inputThread.start();
+			inputThread.start();//start the thread
 			
 			Thread fromServerThread = new Thread() {
 				@Override
@@ -131,8 +129,18 @@ public class socketClient {
 			break;
 		}
 	}
-	
+	public void disconnect() {
+		close();
+	}
 	private void close() {
+		if(out != null) {
+			try {
+				out.writeObject(new Payload(PayloadType.DISCONNECT, ""));
+				out.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 		if(server != null && !server.isClosed()) {
 			try {
 				server.close();
@@ -142,25 +150,42 @@ public class socketClient {
 			}
 		}
 	}
+	public boolean isStillConnected() {
+		if(server == null || !server.isConnected()) {
+			return true;//
+		}
+		return !server.isClosed();
+	}
+	
 	public static void main(String[] args) {
 		socketClient client = new socketClient();
+		String host = null;
 		int port = -1;
 		try{
 			//not safe but try-catch will get it
-			port = Integer.parseInt(args[0]);
+			if(args[0].indexOf(":") > -1) {
+				String[] target = args[0].split(":");
+				host = target[0].trim();
+				port = Integer.parseInt(target[1].trim());
+			}
+			else {
+				System.out.println("Important!: Please pass the argument as hostname:port or ipaddress:port");
+			}
 		}
 		catch(Exception e){
-			System.out.println("Invalid port");
+			System.out.println("Error parsing host:port argument[0]");
 		}
-		if(port == -1){
+		if(port == -1 || host == null){
 			return;
 		}
-		client.connect("127.0.0.1", port);
+		
 		try {
+			client.connect(host, port);
 			//if start is private, it's valid here since this main is part of the class
 			client.start();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
+
 }
