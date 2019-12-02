@@ -61,7 +61,7 @@ public class socketServer {
 			@Override
 			public void run() {
 				while(socketServer.running) {
-					cleanupClients();
+					//cleanupClients();
 					try {
 						Thread.sleep(1000*30);//30 seconds
 					} catch (InterruptedException e) {
@@ -82,16 +82,16 @@ public class socketServer {
 		try (ServerSocket serverSocket = new ServerSocket(port);){
 			while(socketServer.running) {
 				try {
-					if(clients.size() > 3) {
+					//if(clients.size() > 3) {
 						//System.out.println("Too many players, can't connect");
-					}
-					else {
+					//}
+					//else {
 					Socket theClient = serverSocket.accept();
 					System.out.println("Client has connected.");
 					ServerThread thread = new ServerThread(theClient, "Client[" + clients.size() + "]", this);
 					thread.start();
 					clients.add(thread);
-					}
+					//}
 				} catch (IOException e) {
 					e.printStackTrace();
 				}

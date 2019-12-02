@@ -26,7 +26,7 @@ public class userInterface {
 		panel.setPreferredSize(new Dimension(500,500));
 		panel.setLayout(new BorderLayout());
 		JTextArea textSpot = new JTextArea();
-		textSpot.setEditable(true);
+		textSpot.setEditable(false);
 		textSpot.setText("");
 		
 		JPanel area = new JPanel();
@@ -55,7 +55,7 @@ public class userInterface {
 						}
 					}
 					try {
-						Thread.sleep(30);
+						Thread.sleep(25);
 					} catch (InterruptedException e ) {
 						e.printStackTrace();
 					}
@@ -69,7 +69,7 @@ public class userInterface {
 		JTextField hostTextField = new JTextField();
 		hostTextField.setText("127.0.0.1");
 		JTextField portTextField = new JTextField();
-		portTextField.setText("3000");
+		portTextField.setText("3200");
 		JTextField errorTextField = new JTextField();
 		errorTextField.setText("");
 		JButton connect = new JButton();
@@ -117,6 +117,7 @@ public class userInterface {
 		input.add(rollDice);
 		panel.add(input, BorderLayout.SOUTH);
 		frame.add(panel, BorderLayout.CENTER);
+		panel.add(connectionPanel, BorderLayout.NORTH);
 		frame.pack();
 		frame.setVisible(true);
 	}
