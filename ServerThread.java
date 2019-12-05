@@ -1,13 +1,10 @@
 package socket4;
 
-//a majority of this code comes from https://github.com/MattToegel/IT114/blob/master/Examples/SocketsPart4/src/ServerThread.java
-
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.Random;
-
 
 //Class to hold client connection and prevent it from blocking the main thread of the server
 public class ServerThread extends Thread{
@@ -26,19 +23,21 @@ public class ServerThread extends Thread{
 		out = new ObjectOutputStream(client.getOutputStream());
 		in = new ObjectInputStream(client.getInputStream());
 		System.out.println("Spawned thread for client " + clientName);
-		
-		server.broadcast(new Payload(PayloadType.CONNECT, clientName));
+		//broadcast connect to other players
+		server.broadcast(new Payload(PayloadType.CONNECT, clientName), clientName);
 		send(new Payload(PayloadType.MESSAGE, "Other players online: " + server.clients.size()));
-		
+		//send to my player my given name
+		send(new Payload(PayloadType.UPDATE_NAME, clientName));
 	}
 	@Override
 	public void run() {
 		try{
 			Payload fromClient;
-			//if disconnected in.readObject will throw an EOFException
+			//if disconnected, in.readObject will throw an EOFException
 			while(isRunning 
 					&& !client.isClosed() 
 					&& (fromClient = (Payload)in.readObject()) != null) {
+				//received a payload, handle it
 				processPayload(fromClient);
 			}
 		}
@@ -55,7 +54,7 @@ public class ServerThread extends Thread{
 	public String getClientName() {
 		return this.clientName;
 	}
-	void processPayload(Payload payload) throws IOException {
+	void processPayload(Payload payload) {
 		System.out.println("Received: " + payload);
 		switch(payload.payloadType) {
 			case MESSAGE:
@@ -66,8 +65,14 @@ public class ServerThread extends Thread{
 			case DISCONNECT:
 				System.out.println("Removing client " + clientName);
 				server.removeClient(this);
+				server.broadcast(new Payload(PayloadType.DISCONNECT,""));
 				stopThread();
-			break;
+				break;
+			case CHOICE:
+				//handles my clients choice and broadcasts result if applicable
+				//otherwise records my choice and waits for opponent
+				server.HandleChoice(clientName, payload.message);
+				break;
 			case ROLL_IT:
 				Random random = new Random();
 				int roll = random.nextInt(7);

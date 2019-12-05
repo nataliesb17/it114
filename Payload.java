@@ -3,8 +3,8 @@ package socket4;
 import java.io.Serializable;
 
 public class Payload implements Serializable{
-	public PayloadType payloadType;
 	private static final long serialVersionUID = -2204;
+	public PayloadType payloadType;
 	public String message;
 	public int number;
 	

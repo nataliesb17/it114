@@ -17,50 +17,64 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
 public class userInterface {
-	public static boolean running = true;
+	public static boolean isRunning = true;
 	public static void main(String[] args) {
+		//create frame
 		JFrame frame = new JFrame("Trouble Game");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		
 		frame.setLayout(new BorderLayout());
-		JPanel panel = new JPanel();
-		panel.setPreferredSize(new Dimension(500,500));
-		panel.setLayout(new BorderLayout());
-		JTextArea textSpot = new JTextArea();
-		textSpot.setEditable(false);
-		textSpot.setText("");
+		//create panel
+		JPanel rps = new JPanel();
+		rps.setPreferredSize(new Dimension(400,400));
+		rps.setLayout(new BorderLayout());
+		//create text area for messages
+		JTextArea textArea = new JTextArea();
+		//don't let the user edit this directly
+		textArea.setEditable(false);
+		textArea.setText("");
+		//create panel to hold multiple controls
+		JPanel attemptsArea = new JPanel();
+		attemptsArea.setLayout(new BorderLayout());
+		//add text area to history/attempts
+		attemptsArea.add(textArea, BorderLayout.CENTER);
+		attemptsArea.setBorder(BorderFactory.createLineBorder(Color.black));
+		//add history/attempts to panel
+		rps.add(attemptsArea, BorderLayout.CENTER);
+		//create panel to hold multiple controls
+		JPanel userInput = new JPanel();
 		
-		JPanel area = new JPanel();
-		area.setLayout(new BorderLayout());
-		area.add(textSpot, BorderLayout.CENTER);
-		area.setBorder(BorderFactory.createLineBorder(Color.CYAN));
-		panel.add(area, BorderLayout.CENTER);
-		JPanel input = new JPanel();
 		
+		    	
+		
+		//Interaction will be our instance to interact with
+		//socket client
 		Interaction interaction = new Interaction();
 		Thread clientMessageReader = new Thread() {
 			@Override
 			public void run() {
-				while(running && interaction.isClientConnected()) {
-					String mes = interaction.getMessage();
-					if(mes != null) {
-						System.out.println("Got message " + mes);
-						if(mes.indexOf("[name]") > -1) {
-							String[] n = mes.split("]");
+				while(isRunning && interaction.isClientConnected()) {
+					String m = interaction.getMessage();
+					if(m != null) {
+						System.out.println("Got message " + m);
+						if(m.indexOf("[name]") > -1) {
+							String[] n = m.split("]");
 							frame.setTitle(frame.getTitle() + " - " + n[1]);
-							
 						}
 						else {
-							System.out.println("Appending to the text area");
-							textSpot.append(mes + "\n");
+							System.out.println("Appending to textarea");
+							textArea.append(m +"\n");
 						}
 					}
+				
 					try {
 						Thread.sleep(25);
-					} catch (InterruptedException e ) {
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 				}
-				System.out.println("Message reader thread has finished");
+				System.out.println("Message reader thread finished");
 			}
 			
 		};
@@ -103,23 +117,29 @@ public class userInterface {
 				    System.exit(0);
 				  }
 		});
-		//creating the roll dice button
+		
+		
+		
+		//create rock button
 		JButton rollDice = new JButton();
-		rollDice.setPreferredSize(new Dimension(200,40));
 		rollDice.setText("Roll Dice!");
+		rollDice.setPreferredSize(new Dimension(100,30));
 		rollDice.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-					interaction.sendRoll();
+				interaction.sendRoll(); //this needs to be changed
 			}
 		});
 		
-		input.add(rollDice);
-		panel.add(input, BorderLayout.SOUTH);
-		frame.add(panel, BorderLayout.CENTER);
-		panel.add(connectionPanel, BorderLayout.NORTH);
+		userInput.add(rollDice);
+		//add panel to rps panel
+		rps.add(userInput, BorderLayout.SOUTH);
+		//add rps panel to frame
+		frame.add(rps, BorderLayout.CENTER);
+		frame.add(connectionPanel, BorderLayout.NORTH);
 		frame.pack();
 		frame.setVisible(true);
+		
 	}
 	
 }
@@ -152,16 +172,16 @@ class Interaction {
 	public void sendRoll() {
 		client.sendRoll();
 	}
-	public String getMessage() {
-		if(client == null) {
-			return null;
-		}
-		return client.messages.poll();
-	}
 	public boolean isClientConnected() {
 		if(client == null) {
 			return true;//just so loop doesn't die early
 		}
 		return client.isStillConnected();
+	}
+	public String getMessage() {
+		if(client == null) {
+			return null;
+		}
+		return client.messages.poll();
 	}
 }
