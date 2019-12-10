@@ -18,11 +18,25 @@ import javax.swing.JTextField;
 
 public class userInterface {
 	public static boolean isRunning = true;
+	
+	public static void CreateBoard(JPanel panel, String location, JFrame frame, Dimension dimension) {
+		JPanel panelBoard = new JPanel();
+		for (int i = 0; i < 5; i++) {
+			JButton b = new JButton();
+			panelBoard.add(b);
+		}
+		panelBoard.setPreferredSize(dimension);
+		panel.add(panelBoard);
+		frame.add(panel);
+	}
+	
 	public static void main(String[] args) {
 		//create frame
 		JFrame frame = new JFrame("Trouble Game");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
+		JPanel board = new JPanel();
+		board.setPreferredSize(new Dimension(300,300));
 		frame.setLayout(new BorderLayout());
 		//create panel
 		JPanel rps = new JPanel();
@@ -40,12 +54,11 @@ public class userInterface {
 		attemptsArea.add(textArea, BorderLayout.CENTER);
 		attemptsArea.setBorder(BorderFactory.createLineBorder(Color.black));
 		//add history/attempts to panel
-		rps.add(attemptsArea, BorderLayout.CENTER);
+		//rps.add(attemptsArea, BorderLayout.CENTER);
 		//create panel to hold multiple controls
 		JPanel userInput = new JPanel();
 		
 		
-		    	
 		
 		//Interaction will be our instance to interact with
 		//socket client
@@ -119,7 +132,6 @@ public class userInterface {
 		});
 		
 		
-		
 		//create rock button
 		JButton rollDice = new JButton();
 		rollDice.setText("Roll Dice!");
@@ -136,6 +148,11 @@ public class userInterface {
 		rps.add(userInput, BorderLayout.SOUTH);
 		//add rps panel to frame
 		frame.add(rps, BorderLayout.CENTER);
+		
+		CreateBoard(board, BorderLayout.NORTH, frame, new Dimension(100,100));
+		CreateBoard(board, BorderLayout.SOUTH, frame, new Dimension(-100,-100));
+		//CreateBoard(board, BorderLayout.WEST, frame, new Dimension(-50, -100));
+		 
 		frame.add(connectionPanel, BorderLayout.NORTH);
 		frame.pack();
 		frame.setVisible(true);
